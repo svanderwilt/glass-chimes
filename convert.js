@@ -73,7 +73,11 @@ let busy = false;
 
 // ---------- File handling ----------
 
-dropzone.addEventListener('click', () => fileInput.click());
+// The dropzone-inner element is a <label for="fileInput">, so taps already
+// open the picker via the label-for relationship. Adding another click
+// handler on the dropzone that called fileInput.click() would double-fire
+// on iOS Safari and could swallow the change event after a photo was
+// picked — so we don't. The label handles taps; we only wire change + drop.
 fileInput.addEventListener('change', e => {
   const f = e.target.files?.[0];
   if (f) loadFile(f);
@@ -89,12 +93,24 @@ dropzone.addEventListener('drop', e => {
 });
 
 function loadFile(file) {
-  if (!file.type.startsWith('image/')) {
-    alert('Please choose an image file.');
+  // iOS sometimes hands us files with an empty `type` (notably HEIC from
+  // the Photos picker on some iOS versions). Only reject when we have a
+  // type AND it's clearly non-image; otherwise let the browser try to
+  // decode and rely on `img.onerror` to flag genuine failures.
+  if (file.type && !file.type.startsWith('image/')) {
+    alert('That doesn’t look like an image. Pick a JPG, PNG, or HEIC.');
     return;
   }
+
+  // Show a loading indicator immediately so the user sees something
+  // happen between picking a photo and the pipeline kicking off. Big
+  // phone photos can take a beat to decode.
+  progressBox.hidden = false;
+  setProgress(1, 'Reading photo…');
+
   const url = URL.createObjectURL(file);
   const img = new Image();
+  img.decoding = 'async';
   img.onload = () => {
     URL.revokeObjectURL(url);
     loadedImage = img;
@@ -103,7 +119,13 @@ function loadFile(file) {
     results.hidden = false;
     regenerate();
   };
-  img.onerror = () => alert('Could not read that image.');
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    progressBox.hidden = true;
+    alert('Could not read that image. If it’s a HEIC from your iPhone, try ' +
+          'sharing it as a JPG (Share → Options → Most Compatible) and ' +
+          'picking that.');
+  };
   img.src = url;
 }
 
