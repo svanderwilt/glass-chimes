@@ -1,0 +1,231 @@
+/* Converter-specific styles — shares the warm palette from styles.css */
+
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: rgba(255, 240, 210, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(43, 24, 16, 0.12);
+}
+.navlink {
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.navlink:hover { text-decoration: underline; }
+.navtitle {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+.navspacer { flex: 1; }
+
+.converter {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.dropzone {
+  border: 2px dashed rgba(43, 24, 16, 0.35);
+  border-radius: 16px;
+  background: rgba(255, 250, 240, 0.45);
+  transition: background 0.2s, border-color 0.2s;
+}
+.dropzone.drag { background: rgba(255, 230, 180, 0.7); border-color: var(--ink); }
+.dropzone-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+  cursor: pointer;
+  text-align: center;
+}
+.dropzone-icon {
+  font-size: 2.4rem;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.dropzone-text {
+  font-size: 1.05rem;
+  margin: 0 0 4px;
+  color: var(--ink);
+}
+.dropzone-sub {
+  font-size: 0.85rem;
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.controls {
+  background: rgba(255, 250, 240, 0.6);
+  border: 1px solid rgba(43, 24, 16, 0.12);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.control-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.control { display: flex; flex-direction: column; gap: 6px; }
+.label-row { display: flex; justify-content: space-between; align-items: baseline; }
+.label-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.label-value {
+  font-family: 'Inter', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.control input[type="range"] {
+  width: 100%;
+  accent-color: var(--bg-bot);
+}
+.control-help {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.button-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.primary-btn,
+.ghost-btn {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, transform 0.05s;
+}
+.primary-btn {
+  background: var(--ink);
+  color: #f7e7c4;
+  border-color: var(--ink);
+}
+.primary-btn:hover  { background: #1a0f08; }
+.primary-btn:active { transform: scale(0.98); }
+.ghost-btn {
+  background: transparent;
+  color: var(--ink);
+  border-color: rgba(43, 24, 16, 0.35);
+}
+.ghost-btn:hover  { background: rgba(43, 24, 16, 0.08); }
+.ghost-btn:active { transform: scale(0.98); }
+.ghost-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 720px) {
+  .results { grid-template-columns: 1fr; }
+}
+
+.result-panel {
+  background: rgba(255, 250, 240, 0.6);
+  border: 1px solid rgba(43, 24, 16, 0.12);
+  border-radius: 14px;
+  padding: 16px;
+}
+.result-panel h2 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: 500;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.result-meta {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+.result-frame {
+  border-radius: 10px;
+  overflow: hidden;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+}
+.result-frame canvas,
+.result-frame svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Clickable panels in the pattern preview. Hover gives a subtle wash so it's
+   obvious the panel is interactive without screaming "selected". */
+.result-frame svg polygon[data-region-id] {
+  cursor: pointer;
+  transition: opacity 0.12s, filter 0.12s;
+}
+.result-frame svg polygon[data-region-id]:hover {
+  opacity: 0.6;
+  filter: saturate(1.4) brightness(1.05);
+}
+
+.edit-hint {
+  margin: 14px 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  background: rgba(255, 250, 240, 0.6);
+  border: 1px solid rgba(43, 24, 16, 0.12);
+  border-radius: 14px;
+}
+.progress-bar {
+  width: 100%;
+  max-width: 520px;
+  height: 6px;
+  background: rgba(43, 24, 16, 0.12);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--ink);
+  transition: width 0.2s ease-out;
+}
+.progress-text {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}

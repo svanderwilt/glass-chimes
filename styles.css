@@ -1,0 +1,174 @@
+/* Warm afternoon-through-glass background, plus type that reads as
+   handcrafted rather than tech-startup. */
+
+:root {
+  --bg-top: #f7e7c4;
+  --bg-mid: #e8c382;
+  --bg-bot: #c47b3a;
+  --ink: #2b1810;
+  --ink-soft: #6b4a30;
+  --lead: #1a0f08;
+  --bar-shadow: rgba(40, 20, 8, 0.45);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(ellipse at 30% 0%, rgba(255, 220, 150, 0.6), transparent 60%),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bot) 100%);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 300;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.stage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px 32px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.intro {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.intro h1 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  letter-spacing: 0.01em;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+
+.intro .tagline {
+  font-size: 1rem;
+  color: var(--ink-soft);
+  margin: 0;
+  font-style: italic;
+}
+
+.chime-area {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  height: 540px;
+  touch-action: none; /* let our pointer handler own drag gestures */
+}
+
+.hanger {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  filter: drop-shadow(0 6px 8px var(--bar-shadow));
+}
+
+.chimes {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 30px);
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding: 0 30px;
+}
+
+.chime {
+  position: relative;
+  width: 70px;
+  cursor: grab;
+  transform-origin: 50% 0%;
+  transition: transform 0.05s linear;
+  will-change: transform;
+}
+
+.chime.dragging { cursor: grabbing; }
+
+.chime .cord {
+  display: block;
+  width: 2px;
+  height: 20px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #3e2710, #6b4a30);
+}
+
+.chime svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 4px 6px rgba(40, 20, 8, 0.3));
+}
+
+/* Soft inner highlight on the panel, applied via an overlay for a "lit from
+   behind" feel without baking it into the gradient. */
+.chime .panel-highlight {
+  mix-blend-mode: screen;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Subtle wiggle when a chime is at rest — barely perceptible, just enough
+   that nothing feels frozen. Pauses while the user is interacting. */
+@keyframes breathe {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(0.4deg); }
+}
+.chime:not(.user-driven):not(.struck) {
+  animation: breathe 6s ease-in-out infinite;
+}
+.chime:nth-child(2n):not(.user-driven):not(.struck) { animation-delay: -1.5s; }
+.chime:nth-child(3n):not(.user-driven):not(.struck) { animation-delay: -3s;   }
+.chime:nth-child(5n):not(.user-driven):not(.struck) { animation-delay: -4.5s; }
+
+.mute-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(43, 24, 16, 0.25);
+  background: rgba(255, 240, 210, 0.7);
+  color: var(--ink);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: background 0.2s, transform 0.1s;
+}
+.mute-btn:hover  { background: rgba(255, 240, 210, 0.9); }
+.mute-btn:active { transform: scale(0.95); }
+
+.hint {
+  margin-top: 24px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  text-align: center;
+  font-style: italic;
+  max-width: 480px;
+}
+.hint p { margin: 0; }
+
+@media (max-width: 600px) {
+  .chime-area { height: 460px; }
+  .chime { width: 50px; }
+  .chimes { padding: 0 10px; }
+}

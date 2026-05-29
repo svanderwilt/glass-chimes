@@ -1,0 +1,17 @@
+# Render Blueprint — one-click deploy as a static site.
+# Push this repo to GitHub, then Render → "New +" → "Blueprint" → pick the
+# repo. Render reads this file and provisions the service.
+services:
+  - type: web
+    name: glass-chimes
+    runtime: static
+    buildCommand: ""           # nothing to build for v1; pure HTML/JS/CSS
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=300
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

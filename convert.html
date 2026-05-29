@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pattern Designer — Stained-Glass Chimes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="convert.css">
+</head>
+<body>
+  <nav class="topnav">
+    <a href="index.html" class="navlink">← Chimes</a>
+    <span class="navtitle">Pattern Designer</span>
+    <span class="navspacer"></span>
+  </nav>
+
+  <main class="converter">
+    <header class="intro">
+      <h1>Photo → Stained-Glass Pattern</h1>
+      <p class="tagline">Drop a photo. We'll turn it into a cuttable pattern.</p>
+    </header>
+
+    <section class="dropzone" id="dropzone">
+      <label class="dropzone-inner" for="fileInput">
+        <div class="dropzone-icon">⤴</div>
+        <p class="dropzone-text">Drop a photo here or tap to choose</p>
+        <p class="dropzone-sub">PNG, JPG, or HEIC · processed locally in your browser</p>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+      </label>
+    </section>
+
+    <section class="controls" id="controls" hidden>
+      <div class="control-row">
+        <label class="control">
+          <span class="label-row">
+            <span class="label-name">Panels</span>
+            <span class="label-value" id="panelCountValue">60</span>
+          </span>
+          <input type="range" id="panelCount" min="15" max="150" step="1" value="60">
+          <span class="control-help">More panels = finer detail, but harder to cut</span>
+        </label>
+
+        <label class="control">
+          <span class="label-row">
+            <span class="label-name">Colours</span>
+            <span class="label-value" id="colorCountValue">8</span>
+          </span>
+          <input type="range" id="colorCount" min="3" max="14" step="1" value="8">
+          <span class="control-help">How many distinct glass colours to use</span>
+        </label>
+
+        <label class="control">
+          <span class="label-row">
+            <span class="label-name">Smoothing</span>
+            <span class="label-value" id="smoothingValue">3</span>
+          </span>
+          <input type="range" id="smoothing" min="0" max="8" step="1" value="3">
+          <span class="control-help">Higher = simpler shapes, less photo detail</span>
+        </label>
+
+        <label class="control">
+          <span class="label-row">
+            <span class="label-name">Simplify</span>
+            <span class="label-value" id="simplifyValue">2.0</span>
+          </span>
+          <input type="range" id="simplify" min="0.5" max="6" step="0.5" value="2.0">
+          <span class="control-help">Higher = straighter panel edges</span>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="regenBtn" class="primary-btn" type="button">Regenerate</button>
+        <button id="undoBtn" class="ghost-btn" type="button" disabled>↶ Undo</button>
+        <button id="downloadBtn" class="ghost-btn" type="button" disabled>Download SVG</button>
+        <button id="resetBtn" class="ghost-btn" type="button">Start over</button>
+      </div>
+      <p class="edit-hint">
+        Tap any panel in the pattern to remove it — the largest adjacent panel grows to fill the space.
+      </p>
+    </section>
+
+    <section class="results" id="results" hidden>
+      <div class="result-panel">
+        <h2>Original</h2>
+        <div class="result-frame">
+          <canvas id="originalCanvas"></canvas>
+        </div>
+      </div>
+      <div class="result-panel">
+        <h2>Pattern <span class="result-meta" id="patternMeta"></span></h2>
+        <div class="result-frame">
+          <div id="patternHolder"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="progress" id="progress" hidden>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">Processing…</div>
+    </div>
+
+    <footer class="hint">
+      <p>Photo never leaves your device. SVG output can be scaled to any size for cutting templates.</p>
+    </footer>
+  </main>
+
+  <script src="convert.js"></script>
+</body>
+</html>

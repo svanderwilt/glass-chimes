@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stained-Glass Chimes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="stage">
+    <header class="intro">
+      <h1>Stained-Glass Chimes</h1>
+      <p class="tagline">Hover, drag, or tap a chime to hear it sing.</p>
+    </header>
+
+    <section class="chime-area" id="chime-area" aria-label="Interactive wind chime">
+      <svg class="hanger" viewBox="0 0 800 40" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"  stop-color="#7a4f29"/>
+            <stop offset="50%" stop-color="#5d3a1a"/>
+            <stop offset="100%" stop-color="#3e2710"/>
+          </linearGradient>
+        </defs>
+        <rect x="20" y="10" width="760" height="20" rx="4" fill="url(#bar)"/>
+      </svg>
+
+      <div class="chimes" id="chimes"></div>
+
+      <button id="muteBtn" class="mute-btn" aria-label="Mute audio" type="button">
+        <span class="icon-sound">♪</span>
+        <span class="icon-mute" hidden>✕</span>
+      </button>
+    </section>
+
+    <footer class="hint">
+      <p>Audio is synthesised tubular-bell tones until real recordings of Mom's chimes are added.</p>
+      <p style="margin-top: 14px;">
+        <a href="convert.html" style="color: var(--ink); font-weight: 500;">→ Try the pattern designer</a>
+      </p>
+    </footer>
+  </main>
+
+  <script src="chimes.js"></script>
+</body>
+</html>
