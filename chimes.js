@@ -258,8 +258,14 @@ const DRAG_RETRIGGER_MS = 220; // can re-ring the same chime if you linger
 const HOVER_RETRIGGER_MS = 600;
 
 function chimeIndexFromEvent(e) {
-  const target = (e.target instanceof Element) ? e.target.closest('.chime') : null;
-  return target ? Number(target.dataset.index) : -1;
+  // Use elementFromPoint rather than e.target. On iOS the touch is
+  // implicitly captured to the element you first touched, so e.target
+  // would keep pointing at that original chime even as the finger drags
+  // across other chimes. elementFromPoint gives us the element actually
+  // under the pointer right now.
+  const hit = document.elementFromPoint(e.clientX, e.clientY);
+  const chime = (hit instanceof Element) ? hit.closest('.chime') : null;
+  return chime ? Number(chime.dataset.index) : -1;
 }
 
 function speedToVelocity(speedPxPerSec) {
