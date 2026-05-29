@@ -37,9 +37,11 @@ const originalCanvas  = document.getElementById('originalCanvas');
 const patternHolder   = document.getElementById('patternHolder');
 const patternMeta     = document.getElementById('patternMeta');
 const regenBtn        = document.getElementById('regenBtn');
+const flattenBtn      = document.getElementById('flattenBtn');
 const undoBtn         = document.getElementById('undoBtn');
 const downloadBtn     = document.getElementById('downloadBtn');
 const resetBtn        = document.getElementById('resetBtn');
+const editHint        = document.getElementById('editHint');
 const panelCountEl    = document.getElementById('panelCount');
 const colorCountEl    = document.getElementById('colorCount');
 const smoothingEl     = document.getElementById('smoothing');
@@ -70,6 +72,19 @@ let undoSnapshot = null;
  *  could race with the in-flight DOM swap; ignore further clicks until
  *  the current one finishes. */
 let busy = false;
+
+/** When true, tapping a panel triggers a flood-fill merge of every
+ *  connected panel within `FLATTEN_DELTA_E` of the tapped panel's average
+ *  colour. Off by default — taps still remove a single panel. Toggled via
+ *  the "🪄 Flatten" button. */
+let flattenMode = false;
+
+/** Threshold for the flatten flood-fill, in CIE Lab ΔE. Smaller = stricter
+ *  match, larger = greedier merging. 26 is roughly the boundary between
+ *  "obviously different colours" and "noticeably different shades of the
+ *  same colour" and is a good default for things like skies, grass, and
+ *  bokeh backgrounds. */
+const FLATTEN_DELTA_E = 26;
 
 // ---------- File handling ----------
 
@@ -144,6 +159,13 @@ for (const [el, valEl, suffix] of [
 
 regenBtn.addEventListener('click', () => regenerate());
 undoBtn.addEventListener('click', () => undoLastMerge());
+flattenBtn.addEventListener('click', () => {
+  flattenMode = !flattenMode;
+  flattenBtn.setAttribute('aria-pressed', String(flattenMode));
+  editHint.textContent = flattenMode
+    ? 'Flatten on: tap a panel and similar-coloured connected panels are absorbed into it.'
+    : 'Tap any panel to remove it — the largest adjacent panel grows to fill the space.';
+});
 resetBtn.addEventListener('click', () => {
   loadedImage = null;
   currentSvg = null;
@@ -284,6 +306,14 @@ function handleSvgClick(e) {
  *  back. Re-renders. */
 async function manualMerge(regionId) {
   if (busy || !currentState) return;
+  if (flattenMode) {
+    await floodMerge(regionId);
+  } else {
+    await removeSinglePanel(regionId);
+  }
+}
+
+async function removeSinglePanel(regionId) {
   const { regionMap, w, h } = currentState;
   const neighbour = longestBorderNeighbour(regionMap, w, h, regionId);
   if (neighbour < 0) return;          // isolated region — nothing to do
@@ -305,6 +335,146 @@ async function manualMerge(regionId) {
   } finally {
     busy = false;
   }
+}
+
+/** Flatten flood-fill. Walks the region-adjacency graph from the clicked
+ *  panel outward; every neighbour whose average colour is within ΔE of the
+ *  anchor (in CIE Lab) gets absorbed into the anchor, and we expand from
+ *  it too. Behaves like a paint-bucket fill in panel space — great for
+ *  collapsing speckled skies, blurry backgrounds, or shadow gradients
+ *  into a single panel.
+ *
+ *  Anchor colour is sampled from the original (smoothed-input) image so
+ *  the threshold is comparable across panels even after earlier merges. */
+async function floodMerge(seedId) {
+  const { regionMap, w, h, imageData } = currentState;
+
+  busy = true;
+  progressBox.hidden = false;
+  setProgress(20, 'Finding similar panels…');
+
+  try {
+    const { labOf, adjacency } = buildRegionGraph(regionMap, w, h, imageData);
+    const anchorLab = labOf.get(seedId);
+    if (!anchorLab) return;
+
+    // BFS from the seed; only enqueue and absorb neighbours within the
+    // colour threshold. Neighbours outside the threshold are still marked
+    // visited so we don't tunnel across them.
+    const toAbsorb = new Set();
+    const visited  = new Set([seedId]);
+    const queue    = [seedId];
+    while (queue.length) {
+      const cur = queue.shift();
+      const neigh = adjacency.get(cur);
+      if (!neigh) continue;
+      for (const nb of neigh) {
+        if (visited.has(nb)) continue;
+        visited.add(nb);
+        const lab = labOf.get(nb);
+        if (!lab) continue;
+        if (labDistance(anchorLab, lab) < FLATTEN_DELTA_E) {
+          toAbsorb.add(nb);
+          queue.push(nb);
+        }
+      }
+    }
+
+    if (toAbsorb.size === 0) {
+      // No similar neighbours — nothing to do. Hide progress and bail.
+      progressBox.hidden = true;
+      return;
+    }
+
+    await setProgress(50, `Merging ${toAbsorb.size} panel${toAbsorb.size === 1 ? '' : 's'} into one…`);
+
+    // Snapshot before mutating so the user can undo.
+    undoSnapshot = new Int32Array(regionMap);
+    undoBtn.disabled = false;
+
+    // Re-label absorbed regions to the seed's id.
+    for (let i = 0; i < regionMap.length; i++) {
+      if (toAbsorb.has(regionMap[i])) regionMap[i] = seedId;
+    }
+
+    await renderFromState(70);
+    setTimeout(() => { progressBox.hidden = true; }, 200);
+  } finally {
+    busy = false;
+  }
+}
+
+/** Build per-region average CIE Lab colour + 4-neighbour adjacency in one
+ *  pass over the region map. Used by `floodMerge`; we rebuild each time
+ *  because previous merges change the topology. */
+function buildRegionGraph(regionMap, w, h, imageData) {
+  // Accumulate average colour in linearised RGB space (we'll convert to
+  // Lab at the end). Using LinearRGB averages is more faithful than
+  // averaging sRGB byte values directly when regions span a brightness
+  // range.
+  const sums = new Map();    // id -> [rLin, gLin, bLin]
+  const counts = new Map();  // id -> pixel count
+  const data = imageData.data;
+  const srgbToLinear = c => {
+    const x = c / 255;
+    return x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+  };
+
+  for (let i = 0; i < regionMap.length; i++) {
+    const id = regionMap[i];
+    const j = i * 4;
+    const r = srgbToLinear(data[j]);
+    const g = srgbToLinear(data[j + 1]);
+    const b = srgbToLinear(data[j + 2]);
+    let s = sums.get(id);
+    if (!s) { s = [0, 0, 0]; sums.set(id, s); }
+    s[0] += r; s[1] += g; s[2] += b;
+    counts.set(id, (counts.get(id) || 0) + 1);
+  }
+
+  const labOf = new Map();
+  for (const [id, s] of sums) {
+    const n = counts.get(id);
+    labOf.set(id, linearRgbToLab(s[0] / n, s[1] / n, s[2] / n));
+  }
+
+  // 4-neighbour adjacency. Scan right + down edges only; each pair gets
+  // both directions added at once so we never duplicate work.
+  const adjacency = new Map();
+  const addEdge = (a, b) => {
+    if (a === b) return;
+    if (!adjacency.has(a)) adjacency.set(a, new Set());
+    if (!adjacency.has(b)) adjacency.set(b, new Set());
+    adjacency.get(a).add(b);
+    adjacency.get(b).add(a);
+  };
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (x < w - 1) addEdge(regionMap[i], regionMap[i + 1]);
+      if (y < h - 1) addEdge(regionMap[i], regionMap[i + w]);
+    }
+  }
+  return { labOf, adjacency };
+}
+
+/** Linear-light RGB → CIE XYZ → CIELAB. Single-pixel variant of the
+ *  pipeline used by `rgbaToLab` during quantization. */
+function linearRgbToLab(r, g, b) {
+  let X = (r * 0.4124564 + g * 0.3575761 + b * 0.1804375) / 0.95047;
+  let Y =  r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
+  let Z = (r * 0.0193339 + g * 0.1191920 + b * 0.9503041) / 1.08883;
+  const f = t => t > 0.008856 ? Math.cbrt(t) : (7.787 * t + 16 / 116);
+  const fx = f(X), fy = f(Y), fz = f(Z);
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+
+/** Euclidean distance in Lab — that's CIE76 ΔE. Cheaper than ΔE2000 and
+ *  plenty good for telling "obviously similar" from "obviously different"
+ *  for our flatten threshold. */
+function labDistance(a, b) {
+  const dL = a[0] - b[0], dA = a[1] - b[1], dB = a[2] - b[2];
+  return Math.sqrt(dL * dL + dA * dA + dB * dB);
 }
 
 /** Single pass over the region map collecting how many pixels of border

@@ -135,6 +135,11 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+.ghost-btn.toggle[aria-pressed="true"] {
+  background: var(--ink);
+  color: #f7e7c4;
+  border-color: var(--ink);
+}
 
 .results {
   display: grid;

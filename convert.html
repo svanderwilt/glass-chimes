@@ -73,12 +73,13 @@
 
       <div class="button-row">
         <button id="regenBtn" class="primary-btn" type="button">Regenerate</button>
+        <button id="flattenBtn" class="ghost-btn toggle" type="button" aria-pressed="false">🪄 Flatten</button>
         <button id="undoBtn" class="ghost-btn" type="button" disabled>↶ Undo</button>
         <button id="downloadBtn" class="ghost-btn" type="button" disabled>Download SVG</button>
         <button id="resetBtn" class="ghost-btn" type="button">Start over</button>
       </div>
-      <p class="edit-hint">
-        Tap any panel in the pattern to remove it — the largest adjacent panel grows to fill the space.
+      <p class="edit-hint" id="editHint">
+        Tap any panel to remove it — the largest adjacent panel grows to fill the space.
       </p>
     </section>
 
